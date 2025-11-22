@@ -1,19 +1,34 @@
 cmake_minimum_required(VERSION 3.16)
-project(berzek LANGUAGES CXX)
+project(berzek-web LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_executable(berzek berzek.cpp)
-
-find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
-if (SFML_FOUND)
-    target_link_libraries(berzek PRIVATE sfml-graphics sfml-window sfml-system)
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "" FORCE)
 endif()
 
-# If a font.ttf exists in the source dir, copy it next to the executable after build
-add_custom_command(TARGET berzek POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/font.ttf
-        $<TARGET_FILE_DIR:berzek>/font.ttf
-    COMMENT "Copying font.ttf to executable directory (if present)")
+add_executable(berzek src/main.cpp)
+
+# Put built web outputs under build/web
+set_target_properties(berzek PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/web"
+  OUTPUT_NAME "index"
+)
+
+# Emscripten-specific flags
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  message(STATUS "Configuring target for Emscripten")
+  target_compile_options(berzek PRIVATE -std=c++17)
+  target_link_options(berzek PRIVATE
+    "-s" "WASM=1"
+    "-s" "ALLOW_MEMORY_GROWTH=1"
+    "-s" "USE_WEBGL2=1"
+    "-s" "ASSERTIONS=1"
+    "-O2"
+    "-s" "EXPORTED_RUNTIME_METHODS=['ccall','cwrap']"
+  )
+endif()
+
+# Find SFML (must be compiled for Emscripten)
+find_package(SFML 2.5 COMPONENTS system window graphics REQUIRED)
+
+target_include_directories(berzek PRIVATE ${SFML_INCLUDE_DIR})
+target_link_libraries(berzek PRIVATE sfml-graphics sfml-window sfml-system)
