@@ -1,0 +1,46 @@
+name: Build (Emscripten) and deploy to Pages
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install emsdk
+        run: |
+          git clone https://github.com/emscripten-core/emsdk.git emsdk
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          echo "source $(pwd)/emsdk_env.sh" >> $GITHUB_ENV
+
+      - name: Build SFML for Emscripten (optional)
+        run: |
+          source emsdk/emsdk_env.sh
+          git clone --depth=1 https://github.com/SFML/SFML.git sfml
+          mkdir -p sfml/build && cd sfml/build
+          emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DSFML_INSTALL_PREFIX=$(pwd)/../install
+          emmake make -j$(nproc)
+          emmake make install
+
+      - name: Configure & build project with Emscripten
+        run: |
+          source emsdk/emsdk_env.sh
+          mkdir -p build
+          emcmake cmake -S . -B build -DSFML_DIR=$(pwd)/sfml/install/lib/cmake/SFML
+          emmake make -C build -j$(nproc)
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v3
+
+      - name: Upload artifact to Pages
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: build/web
+
+      - name: Deploy to Pages
+        uses: actions/deploy-pages@v1
