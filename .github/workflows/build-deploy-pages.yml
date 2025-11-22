@@ -7,7 +7,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Añadir permisos necesarios para el despliegue
     permissions:
       contents: read
       pages: write
@@ -21,26 +20,23 @@ jobs:
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          # Set the environment variables for subsequent steps in this job
-          echo "EMSDK_PATH=$(pwd)" >> $GITHUB_ENV
-          # Source the env file and append the path variables to GITHUB_ENV
+          # Source the env file and append the path variables to GITHUB_ENV for use in *subsequent* steps
           source emsdk_env.sh
+          # Use ">>" to append the current PATH and EMSDK variables to GITHUB_ENV
           echo "PATH=$PATH" >> $GITHUB_ENV
           echo "EMSDK=$EMSDK" >> $GITHUB_ENV
           echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
-          echo "EMSCRIPTEN_SYSROOT=$EMSCRIPTEN_SYSROOT" >> $GITHUB_ENV
-          # Add other necessary variables from emsdk_env.sh if needed
+          echo "BINARYEN_ROOT=$BINARYEN_ROOT" >> $GITHUB_ENV
 
       - name: Build SFML for Emscripten (optional)
         run: |
-          # The environment variables are now automatically available in this step
+          # The environment variables are now available in this step
           git clone --depth=1 https://github.com/SFML/SFML.git sfml
           mkdir -p sfml/build && cd sfml/build
+          # Ensure emcmake and emmake are in the PATH and use them
           emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DSFML_INSTALL_PREFIX=$(pwd)/../install
           emmake make -j$(nproc)
           emmake make install
-
-      # The duplicate step "Build SFML for Emscripten (optional)" has been removed here
 
       - name: Configure & build project with Emscripten
         run: |
@@ -50,15 +46,12 @@ jobs:
           emmake make -C build -j$(nproc)
 
       - name: Configure GitHub Pages
-        # Actualizado de v3 a v5
         uses: actions/configure-pages@v5
 
       - name: Upload artifact to Pages
-        # Actualizado de v1 a v4
         uses: actions/upload-pages-artifact@v4
         with:
           path: build/web
 
       - name: Deploy to Pages
-        # Actualizado de v1 a v4
         uses: actions/deploy-pages@v4
