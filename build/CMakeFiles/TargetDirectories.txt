@@ -1,0 +1,3 @@
+/workspaces/berzek/build/CMakeFiles/berzek.dir
+/workspaces/berzek/build/CMakeFiles/edit_cache.dir
+/workspaces/berzek/build/CMakeFiles/rebuild_cache.dir
