@@ -7,6 +7,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Añadir permisos necesarios para el despliegue
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
@@ -35,12 +40,15 @@ jobs:
           emmake make -C build -j$(nproc)
 
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v3
+        # Actualizado de v3 a v5
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact to Pages
-        uses: actions/upload-pages-artifact@v1
+        # Actualizado de v1 a v4
+        uses: actions/upload-pages-artifact@v4
         with:
           path: build/web
 
       - name: Deploy to Pages
-        uses: actions/deploy-pages@v1
+        # Actualizado de v1 a v4
+        uses: actions/deploy-pages@v4
