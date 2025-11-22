@@ -1,3 +1,9 @@
+<div style="background-color:#0b132b;color:#ffffff;padding:12px;border-radius:8px;text-align:center;">
+  <h1 style="margin:0;font-size:1.4rem;">Papiweb — desarrollos informáticos</h1>
+  <p style="margin:6px 0 0;font-size:0.95rem;opacity:0.95;">
+    Berzek (SFML) — Web build con Emscripten (WASM)
+  </p>
+</div>
 # Papiweb desarrollos informaticos
 # Berzek (SFML) — Build instructions C++
 
