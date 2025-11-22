@@ -1,4 +1,5 @@
-# Berzek (SFML) — Build instructions
+# Papiweb desarrollos informaticos
+# Berzek (SFML) — Build instructions C++
 
 Este repositorio contiene `berzek.cpp`, un clon simple de Berzerk usando SFML.
 
