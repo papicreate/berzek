@@ -1,58 +1,42 @@
-name: Build (Emscripten) and deploy to Pages
+name: Build Emscripten Project
 
-on:
-  push:
-    branches: [ main ]
+on: [push]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Install emsdk and set environment variables
-        run: |
-          git clone https://github.com/emscripten-core/emsdk.git emsdk
-          cd emsdk
-          ./emsdk install latest
-          ./emsdk activate latest
-          # Source the env file and use the standard method to set variables for *subsequent* steps
-          source emsdk_env.sh
-          # Append the path variable to GITHUB_PATH
-          echo "::add-path::$PATH"
-          # Set other necessary variables in GITHUB_ENV
-          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
-          echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
-          echo "BINARYEN_ROOT=$BINARYEN_ROOT" >> $GITHUB_ENV
+    # Paso crucial para permitir los comandos add-path y set-env deprecados
+    - name: Allow unsecure commands for EMSDK setup
+      run: echo "ACTIONS_ALLOW_UNSECURE_COMMANDS=true" >> $GITHUB_ENV
+      shell: bash
 
-      - name: Build SFML for Emscripten (optional)
-        run: |
-          # The environment variables are now available in this step
-          git clone --depth=1 https://github.com/SFML/SFML.git sfml
-          mkdir -p sfml/build && cd sfml/build
-          # Ensure emcmake and emmake are in the PATH and use them
-          emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DSFML_INSTALL_PREFIX=$(pwd)/../install
-          emmake make -j$(nproc)
-          emmake make install
-          
-      - name: Configure & build project with Emscripten
-        run: |
-          # The environment variables are available here too
-          mkdir -p build
-          emcmake cmake -S . -B build -DSFML_DIR=$(pwd)/sfml/install/lib/cmake/SFML
-          emmake make -C build -j$(nproc)
+    - name: Install and activate EMSDK
+      run: |
+        # Clonar el repositorio de emsdk
+        git clone https://github.com/emscripten-core/emsdk.git emsdk
+        cd emsdk
+        
+        # Instalar y activar la última versión (esto usa los comandos inseguros internamente)
+        ./emsdk install latest
+        ./emsdk activate latest
+        
+        # Cargar las variables de entorno en la shell actual del paso.
+        # Gracias a la línea anterior (ACTIONS_ALLOW_UNSECURE_COMMANDS=true), esto funcionará.
+        source "./emsdk_env.sh"
+        
+        # Volver al directorio raíz del proyecto para pasos posteriores
+        cd ..
 
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+    - name: Verify Emscripten installation and run build command
+      run: |
+        # Verificar que emcc esté disponible en el PATH y mostrar la versión
+        emcc --version
 
-      - name: Upload artifact to Pages
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: build/web
-
-      - name: Deploy to Pages
-        uses: actions/deploy-pages@v4
+        # A partir de aquí, puedes añadir tus comandos de construcción, por ejemplo:
+        # make all
+        # ./build.sh
