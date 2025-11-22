@@ -15,26 +15,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install emsdk
+      - name: Install emsdk and set environment variables
         run: |
           git clone https://github.com/emscripten-core/emsdk.git emsdk
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          echo "source $(pwd)/emsdk_env.sh" >> $GITHUB_ENV
+          # Set the environment variables for subsequent steps in this job
+          echo "EMSDK_PATH=$(pwd)" >> $GITHUB_ENV
+          # Source the env file and append the path variables to GITHUB_ENV
+          source emsdk_env.sh
+          echo "PATH=$PATH" >> $GITHUB_ENV
+          echo "EMSDK=$EMSDK" >> $GITHUB_ENV
+          echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
+          echo "EMSCRIPTEN_SYSROOT=$EMSCRIPTEN_SYSROOT" >> $GITHUB_ENV
+          # Add other necessary variables from emsdk_env.sh if needed
 
       - name: Build SFML for Emscripten (optional)
         run: |
-          source emsdk/emsdk_env.sh
+          # The environment variables are now automatically available in this step
           git clone --depth=1 https://github.com/SFML/SFML.git sfml
           mkdir -p sfml/build && cd sfml/build
           emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DSFML_INSTALL_PREFIX=$(pwd)/../install
           emmake make -j$(nproc)
           emmake make install
 
+      # The duplicate step "Build SFML for Emscripten (optional)" has been removed here
+
       - name: Configure & build project with Emscripten
         run: |
-          source emsdk/emsdk_env.sh
+          # The environment variables are available here too
           mkdir -p build
           emcmake cmake -S . -B build -DSFML_DIR=$(pwd)/sfml/install/lib/cmake/SFML
           emmake make -C build -j$(nproc)
