@@ -20,10 +20,11 @@ jobs:
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          # Source the env file and append the path variables to GITHUB_ENV for use in *subsequent* steps
+          # Source the env file and use the standard method to set variables for *subsequent* steps
           source emsdk_env.sh
-          # Use ">>" to append the current PATH and EMSDK variables to GITHUB_ENV
-          echo "PATH=$PATH" >> $GITHUB_ENV
+          # Append the path variable to GITHUB_PATH
+          echo "::add-path::$PATH"
+          # Set other necessary variables in GITHUB_ENV
           echo "EMSDK=$EMSDK" >> $GITHUB_ENV
           echo "EM_CONFIG=$EM_CONFIG" >> $GITHUB_ENV
           echo "BINARYEN_ROOT=$BINARYEN_ROOT" >> $GITHUB_ENV
@@ -37,7 +38,7 @@ jobs:
           emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_AUDIO=OFF -DSFML_BUILD_NETWORK=OFF -DSFML_INSTALL_PREFIX=$(pwd)/../install
           emmake make -j$(nproc)
           emmake make install
-
+          
       - name: Configure & build project with Emscripten
         run: |
           # The environment variables are available here too
